@@ -1,3 +1,3 @@
 # LBK
 
-Web application for LBK...
+LBK utility web application
