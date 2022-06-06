@@ -9,3 +9,5 @@ node_modules/
 # build dirs
 client/dist
 
+# data
+data/
