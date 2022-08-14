@@ -5,8 +5,25 @@ node_modules: package.json package-lock.json
 	npm install
 	touch node_modules
 
-build-get-rankings: lambdas/get_rankings/src
-	npx esbuild ./lambdas/get_rankings/src/index.js --bundle --platform=node --target=node16 --outfile=lambdas/get_rankings/dist/index.js
+build_lambda = npx esbuild ./lambdas/$(1)/src/index.js --bundle --platform=node --target=node16 --outfile=lambdas/$(1)/dist/index.js
+deploy_lambda = aws lambda update-function-code --profile gqh --function-name $(1) --zip-file fileb://lambdas/$(2)/dist/lambda.zip
+
+build-get-rankings:
+	$(call build_lambda,get_rankings)
+
+deploy-get-rankings: build-get-rankings
+	cd lambdas/get_rankings/dist; zip lambda.zip index.js
+	$(call deploy_lambda,lbk-get-rankings,get_rankings)
 
 test-get-rankings:
 	node lambdas/get_rankings/test.js
+
+build-scrape-rankings:
+	$(call build_lambda,scrape_rankings)
+
+deploy-scrape-rankings: build-scrape-rankings
+	cd lambdas/scrape_rankings/dist; zip lambda.zip index.js
+	$(call deploy_lambda,lbk-scrape-rankings,scrape_rankings)
+
+test-scrape-rankings:
+	node lambdas/scrape_rankings/test.js
