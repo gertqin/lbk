@@ -7,7 +7,10 @@ node_modules/
 .env.test
 
 # build dirs
-client/dist
+**/dist
 
 # data
 data/
+
+# mac
+.DS_Store
