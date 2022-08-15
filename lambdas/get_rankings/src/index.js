@@ -1,14 +1,22 @@
-import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
+import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
 const client = new S3Client({ region: "eu-north-1" });
-const command = new ListObjectsV2Command({ Bucket: "gqh-lbk" });
+const command = new GetObjectCommand({ Bucket: "gqh-lbk", Key: "test.json" });
 
-export const handler = async (event) => {
+const streamToString = (stream) =>
+    new Promise((resolve, reject) => {
+        const chunks = [];
+        stream.on("data", (chunk) => chunks.push(chunk));
+        stream.on("error", reject);
+        stream.on("end", () => resolve(Buffer.concat(chunks).toString("utf8")));
+    });
+
+export async function handler() {
     const res = await client.send(command);
+    const content = await streamToString(res.Body);
 
-    const response = {
+    return {
         statusCode: 200,
-        body: res,
+        body: JSON.parse(content),
     };
-    return response;
-};
+}

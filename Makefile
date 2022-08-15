@@ -15,7 +15,7 @@ deploy-get-rankings: build-get-rankings
 	cd lambdas/get_rankings/dist; zip lambda.zip index.js
 	$(call deploy_lambda,lbk-get-rankings,get_rankings)
 
-test-get-rankings:
+test-get-rankings: build-get-rankings
 	node lambdas/get_rankings/test.js
 
 build-scrape-rankings:
@@ -25,5 +25,5 @@ deploy-scrape-rankings: build-scrape-rankings
 	cd lambdas/scrape_rankings/dist; zip lambda.zip index.js
 	$(call deploy_lambda,lbk-scrape-rankings,scrape_rankings)
 
-test-scrape-rankings:
+test-scrape-rankings: build-scrape-rankings
 	node lambdas/scrape_rankings/test.js

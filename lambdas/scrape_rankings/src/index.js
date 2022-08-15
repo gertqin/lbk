@@ -1,15 +1,24 @@
-import { S3Client, ListObjectsV2Command } from "@aws-sdk/client-s3";
-
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 const client = new S3Client({ region: "eu-north-1" });
-const command = new ListObjectsV2Command({ Bucket: "gqh-lbk" });
 
-export const handler = async (event) => {
-    // TODO scrape and store data
+export async function handler() {
+    // TODO scrape
+
+    const body = {
+        date: new Date(),
+        data: {
+            version: "v3",
+        },
+    };
+    const command = new PutObjectCommand({
+        Bucket: "gqh-lbk",
+        Key: "test.json",
+        Body: JSON.stringify(body),
+    });
+
     const res = await client.send(command);
 
-    const response = {
+    return {
         statusCode: 200,
-        body: res,
     };
-    return response;
-};
+}
