@@ -10,13 +10,15 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.145.0",
+    "@sparticuz/chrome-aws-lambda": "^16.1.0",
     "playwright-chromium": "^1.22.2",
+    "playwright-core": "^1.22.2",
     "vue": "^3.2.25"
   },
   "devDependencies": {
+    "@vitejs/plugin-vue": "^3.0.3",
     "dotenv": "^16.0.1",
     "esbuild": "^0.15.3",
-    "@vitejs/plugin-vue": "^3.0.3",
     "vite": "^3.0.7"
   },
   "repository": {

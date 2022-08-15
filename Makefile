@@ -5,7 +5,7 @@ node_modules: package.json package-lock.json
 	npm install
 	touch node_modules
 
-build_lambda = npx esbuild ./lambdas/$(1)/src/index.js --bundle --platform=node --target=node16 --outfile=lambdas/$(1)/dist/index.js
+build_lambda = npx esbuild ./lambdas/$(1)/src/index.js --bundle "--external:*.png" "--external:@sparticuz/chrome-aws-lambda" --platform=node --target=node16 --outfile=lambdas/$(1)/dist/index.js
 deploy_lambda = aws lambda update-function-code --profile gqh --function-name $(1) --zip-file fileb://lambdas/$(2)/dist/lambda.zip
 
 build-get-rankings:
