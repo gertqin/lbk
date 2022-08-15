@@ -1,7 +1,6 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 
 const client = new S3Client({ region: "eu-north-1" });
-const command = new GetObjectCommand({ Bucket: "gqh-lbk", Key: "test.json" });
 
 const streamToString = (stream) =>
     new Promise((resolve, reject) => {
@@ -12,6 +11,7 @@ const streamToString = (stream) =>
     });
 
 export async function handler() {
+    const command = new GetObjectCommand({ Bucket: "gqh-lbk", Key: "rankings/latest.json" });
     const res = await client.send(command);
     const content = await streamToString(res.Body);
 
