@@ -7,6 +7,7 @@ const rankings = shallowRef(null);
     const rankingsUrl = "https://nwkg8ye3pg.execute-api.eu-north-1.amazonaws.com/prod";
     const res = await fetch(rankingsUrl);
     const data = await res.json();
+
     if (data.statusCode === 200) {
         rankings.value = data.body;
     } else {
