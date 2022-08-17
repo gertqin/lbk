@@ -1,57 +1,40 @@
-import awsChromium from "@sparticuz/chrome-aws-lambda";
-import { chromium } from "playwright-core";
+import { loadPage, closeBrowser } from "../../utils/scraper-base";
 
-let browser = null;
+// TODO dynamic season
+const season = "2022";
+const url = `https://badmintonplayer.dk/DBF/Ranglister/#287,${season},,0,,,1095,0,,,,15,,,,0,,,,,,`;
 let page = null;
 
-export async function scrape(url) {
-    if (page == null) {
-        await init();
-    }
-
-    await page.goto("about:blank");
-    await page.goto(url);
-
-    try {
-        await page.waitForSelector("#onetrust-reject-all-handler", { timeout: 1000 });
-        await page.click("#onetrust-reject-all-handler");
-    } catch (e) {
-        console.warn("No cookie popup");
-    }
-
-    try {
-        await page.waitForSelector("#anchor_ad", { timeout: 200 });
-        await page.click("#anchor_ad .anchor_close");
-    } catch (e) {
-        console.warn("No anchor ad");
-    }
-
-    const players = await scrapeCategories();
-    return players;
+export async function init() {
+    page = await loadPage(url);
 }
-
 export async function close() {
-    if (browser != null) {
-        await browser.close();
-    }
+    await closeBrowser();
 }
 
-async function init() {
-    const executablePath = await awsChromium.executablePath;
-    const launchOptions = executablePath
-        ? {
-              args: awsChromium.args,
-              executablePath,
-              headless: awsChromium.headless,
-          }
-        : {};
+export async function scrapeRankingInfo() {
+    await page.waitForSelector("table.RankingListGrid", { timeout: 1000 });
+    return await page.$eval("#PanelResults", (el) => {
+        const info = {};
+        for (const node of el.childNodes) {
+            // text node
+            if (node.nodeType === 3) {
+                const versionMatch = /\s*Version:(.+)/.exec(node.textContent);
+                if (versionMatch && versionMatch.length > 1) {
+                    info.version = versionMatch[1];
+                }
 
-    browser = await chromium.launch(launchOptions);
-    const context = await browser.newContext();
-    page = await context.newPage();
+                const periodMatch = /\s*Periode:(.+)/.exec(node.textContent);
+                if (periodMatch && periodMatch.length > 1) {
+                    info.period = periodMatch[1];
+                }
+            }
+        }
+        return info;
+    });
 }
 
-async function scrapeCategories() {
+export async function scrapePlayers() {
     const categories = ["NIVEAU", "HS", "DS", "HD", "DD", "MD H", "MD D"];
 
     const players = {};
