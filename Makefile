@@ -35,3 +35,8 @@ run: client/node_modules
 
 build-client: client/node_modules
 	cd client; npx vite build
+
+deploy-client: build-client
+	cd client/dist; zip -r client.zip *
+	cd client/dist; aws s3 cp --profile gqh client.zip s3://gqh-lbk-public
+	aws amplify start-deployment --profile gqh --app-id d2sbnizxukiny1 --source-url s3://gqh-lbk-public/client.zip --branch-name prod
