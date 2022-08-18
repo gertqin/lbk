@@ -1,19 +1,38 @@
 <script setup>
 import { ref, shallowRef, computed, watch } from "vue";
 
+const versions = shallowRef(null);
+const selectedVersion = ref(null);
 const rankings = shallowRef(null);
 
-(async function () {
-    const rankingsUrl = "https://nwkg8ye3pg.execute-api.eu-north-1.amazonaws.com/prod";
+async function loadRankings(version) {
+    rankings.value = null;
+
+    const rankingsUrl =
+        "https://nwkg8ye3pg.execute-api.eu-north-1.amazonaws.com/prod" + (version ? "?version=" + version : "");
     const res = await fetch(rankingsUrl);
     const data = await res.json();
 
     if (data.statusCode === 200) {
-        rankings.value = data.body;
+        if (data.body.versions) {
+            versions.value = data.body.versions;
+            selectedVersion.value = versions.value[0];
+        }
+
+        if (data.body.rankings.version === selectedVersion.value) {
+            rankings.value = data.body.rankings;
+        }
     } else {
         alert("Kunne ikke hente rangliste");
     }
-})();
+}
+loadRankings();
+
+watch(selectedVersion, (val, oldVal) => {
+    if (oldVal && val !== oldVal) {
+        loadRankings(val);
+    }
+});
 
 const playerNames = computed(() => {
     return rankings.value ? Object.keys(rankings.value.players) : [];
@@ -78,8 +97,7 @@ function createEmptyTeam(teamName, teamDefinition) {
         name: teamName,
         matches: teamDefinition.map((matchDef) => ({
             name: matchDef.name,
-            categories: matchDef.categories,
-            players: matchDef.categories.map((_) => ""),
+            players: matchDef.categories.map((c) => ({ name: "", category: c })),
         })),
     };
 }
@@ -107,22 +125,30 @@ watch(
     { deep: true }
 );
 
-function getPoints(playerName, category) {
-    const points = rankings.value.players[playerName]?.points;
+function getCategoryPoints(player) {
+    const points = rankings.value.players[player.name]?.points;
     if (points) {
-        return points[category] || points["NIVEAU"] || "-";
+        return points[player.category] || "-";
     } else {
         return "";
     }
 }
-function getTotalPoints(players, categories) {
+function getLevelPoints(player) {
+    const points = rankings.value.players[player.name]?.points;
+    if (points) {
+        return points["NIVEAU"] || "-";
+    } else {
+        return "";
+    }
+}
+function getTotalPoints(players) {
     let totalPoints = 0;
-    players.forEach((playerName, i) => {
-        const points = rankings.value.players[playerName]?.points;
+    for (const player of players) {
+        const points = rankings.value.players[player.name]?.points;
         if (points) {
-            totalPoints += points[categories[i]] || points["NIVEAU"] || 0;
+            totalPoints += points[player.category] || points["NIVEAU"] || 0;
         }
-    });
+    }
     return totalPoints || "";
 }
 
@@ -135,6 +161,13 @@ function clearAll() {
     <div class="set-teams">
         <h1>Sæt hold</h1>
 
+        <div v-if="versions">
+            Ranglisteversion:
+            <select v-model="selectedVersion">
+                <option v-for="version in versions" :value="version">{{ version }}</option>
+            </select>
+        </div>
+
         <template v-if="rankings">
             <datalist id="female-players">
                 <option v-for="player in femalePlayers" :value="player" />
@@ -143,9 +176,7 @@ function clearAll() {
                 <option v-for="player in malePlayers" :value="player" />
             </datalist>
 
-            <div class="info">
-                Rangliste senest opdateret d. {{ new Date(rankings.scrapeDate).toLocaleDateString("en-GB") }}
-            </div>
+            <div style="margin-top: 8px">Periode: {{ rankings.period }}</div>
 
             <div class="teams">
                 <div v-for="team in teams" class="team">
@@ -154,23 +185,27 @@ function clearAll() {
                         <tr>
                             <th></th>
                             <th>Spiller</th>
-                            <th style="width: 48px">Point</th>
-                            <th>Point samlet</th>
+                            <th>Point<br />kategori</th>
+                            <th>Point<br />niveau</th>
+                            <th>Point<br />samlet</th>
                         </tr>
                         <template v-for="match in team.matches">
-                            <tr v-for="(category, i) in match.categories">
-                                <td v-if="i == 0" :rowspan="match.categories.length">{{ match.name }}</td>
+                            <tr v-for="(player, i) in match.players">
+                                <td v-if="i == 0" :rowspan="match.players.length">{{ match.name }}</td>
                                 <td>
                                     <input
-                                        :list="isFemaleCategory(category) ? 'female-players' : 'male-players'"
-                                        v-model="match.players[i]"
+                                        :list="isFemaleCategory(player.category) ? 'female-players' : 'male-players'"
+                                        v-model="player.name"
                                     />
                                 </td>
                                 <td>
-                                    {{ getPoints(match.players[i], category) }}
+                                    {{ getCategoryPoints(player) }}
                                 </td>
-                                <td v-if="i == 0" :rowspan="match.categories.length">
-                                    {{ getTotalPoints(match.players, match.categories) }}
+                                <td>
+                                    {{ getLevelPoints(player) }}
+                                </td>
+                                <td v-if="i == 0" :rowspan="match.players.length">
+                                    {{ getTotalPoints(match.players) }}
                                 </td>
                             </tr>
                         </template>
@@ -191,11 +226,8 @@ function clearAll() {
     padding-bottom: 16px;
 }
 
-.info {
-    font-style: italic;
-}
-
 .teams {
+    font-size: 1.4rem;
     display: flex;
     justify-content: center;
     flex-wrap: wrap;
@@ -226,7 +258,7 @@ function clearAll() {
 
 .clear-button {
     margin-top: 16px;
-    font-size: 1rem;
+    font-size: 1.6rem;
     background: #f44336;
     color: white;
     padding: 8px 16px;

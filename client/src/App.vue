@@ -8,8 +8,17 @@ import SetTeams from "./SetTeams.vue";
 </template>
 
 <style>
+html {
+    font-size: 10px;
+}
 body {
     margin: 0;
+}
+h1 {
+    font-size: 3.2rem;
+}
+h2 {
+    font-size: 2.4rem;
 }
 
 #app {
@@ -19,6 +28,7 @@ body {
     color: #2c3e50;
     margin-top: 64px;
     padding: 0 16px 16px;
+    font-size: 1.6rem;
 }
 </style>
 
@@ -37,7 +47,7 @@ body {
 
     display: flex;
     align-items: center;
-    font-size: 32px;
+    font-size: 3.2rem;
     font-weight: bold;
 }
 </style>
