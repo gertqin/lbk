@@ -54,6 +54,7 @@ export async function scrapePlayers() {
         for (const player of categoryPlayers) {
             if (!players[player.name]) {
                 players[player.name] = {
+                    level: player.level,
                     points: {},
                 };
             }
@@ -93,10 +94,11 @@ async function scrapeCategory() {
 async function scrapeRankingTable() {
     const rankingTable = await page.$("table.RankingListGrid");
     const names = await rankingTable.$$eval("tr > td.name > a", (els) => els.map((el) => el.innerText));
+    const levels = await rankingTable.$$eval("tr > td.clas", (els) => els.map((el) => el.innerText));
     const points = await rankingTable.$$eval("tr > td.points:not(:last-child)", (els) =>
         els.map((el) => Number(el.innerText))
     );
 
-    const players = names.map((name, i) => ({ name, points: points[i] }));
+    const players = names.map((name, i) => ({ name, level: levels[i], points: points[i] }));
     return players;
 }
