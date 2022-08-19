@@ -3,7 +3,7 @@ import SetTeams from "./SetTeams.vue";
 </script>
 
 <template>
-    <header class="header">LBK</header>
+    <header class="header">LBK Kampe</header>
     <SetTeams />
 </template>
 
