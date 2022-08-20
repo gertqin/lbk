@@ -300,29 +300,33 @@ function clearAll() {
                                         v-model="teamPlayers[teamIdx][matchIdx][i]"
                                     />
                                 </td>
-                                <td
-                                    v-if="player.categoryPoints"
-                                    :class="{ 'illegal-points': player.illegal }"
-                                    :title="player.illegalReason"
-                                >
-                                    {{ player.categoryPoints }}{{ player.illegal ? "!" : "" }}
+                                <td v-if="player.categoryPoints" :class="{ 'illegal-points': player.illegal }">
+                                    <span v-tooltip="{ content: player.illegalReason, triggers: ['hover', 'touch'] }">
+                                        {{ player.categoryPoints }}{{ player.illegal ? "!" : "" }}
+                                    </span>
                                 </td>
                                 <td v-else>
                                     {{ player.levelPoints ? "-" : "" }}
                                 </td>
-                                <td
-                                    :class="{ 'illegal-points': player.illegal || player.illegalLevel }"
-                                    :title="player.illegalLevelReason || player.illegalReason"
-                                >
-                                    {{ player.levelPoints || "" }}{{ player.illegal || player.illegalLevel ? "!" : "" }}
+                                <td :class="{ 'illegal-points': player.illegal || player.illegalLevel }">
+                                    <span
+                                        v-tooltip="{
+                                            content: player.illegalLevelReason || player.illegalReason,
+                                            triggers: ['hover', 'touch'],
+                                        }"
+                                    >
+                                        {{ player.levelPoints || ""
+                                        }}{{ player.illegal || player.illegalLevel ? "!" : "" }}
+                                    </span>
                                 </td>
                                 <td
                                     v-if="i == 0"
                                     :rowspan="match.players.length"
                                     :class="{ 'illegal-points': match.illegal }"
-                                    :title="match.illegalReason"
                                 >
-                                    {{ match.totalPoints || "" }}{{ match.illegal ? "!" : "" }}
+                                    <span v-tooltip="{ content: match.illegalReason, triggers: ['hover', 'touch'] }">
+                                        {{ match.totalPoints || "" }}{{ match.illegal ? "!" : "" }}
+                                    </span>
                                 </td>
                             </tr>
                         </template>
@@ -372,6 +376,15 @@ function clearAll() {
 .team :deep(input) {
     background: transparent;
     border: none;
+}
+@media screen and (max-width: 400px) {
+    .team :deep(input) {
+        max-width: 100px;
+    }
+}
+
+.team :deep(td span) {
+    user-select: none;
 }
 
 .illegal {
