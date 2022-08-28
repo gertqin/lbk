@@ -1,4 +1,5 @@
 <script setup>
+import Spinner from "./Spinner.vue";
 import { ref, shallowRef, computed, watch } from "vue";
 
 const versions = shallowRef(null);
@@ -336,6 +337,8 @@ function clearAll() {
 
             <button @click="clearAll" class="clear-button">Ryd alle</button>
         </template>
+
+        <Spinner v-else />
     </div>
 </template>
 
