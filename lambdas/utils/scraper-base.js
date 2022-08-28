@@ -7,6 +7,7 @@ export async function loadPage(url) {
     await initBrowser();
 
     const context = await browser.newContext();
+    context.setDefaultTimeout(8000);
     page = await context.newPage();
 
     await page.goto("about:blank");
@@ -47,3 +48,6 @@ async function initBrowser() {
 
     browser = await chromium.launch(launchOptions);
 }
+
+export const startSeasonYear = 2011;
+export const currentSeasonYear = new Date().getFullYear() - (new Date().getMonth() < 7 ? 1 : 0);
