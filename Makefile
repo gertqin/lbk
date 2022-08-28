@@ -21,7 +21,7 @@ deploy-get-rankings: build-get-rankings
 	$(call deploy_lambda,lbk-get-rankings,get_rankings)
 
 test-get-rankings: build-get-rankings
-	node lambdas/get_rankings/test.js
+	node lambdas/test.js get_rankings
 
 
 build-scrape-rankings: lambdas/node_modules
@@ -32,18 +32,18 @@ deploy-scrape-rankings: build-scrape-rankings
 	$(call deploy_lambda,lbk-scrape-rankings,scrape_rankings)
 
 test-scrape-rankings: build-scrape-rankings
-	node lambdas/scrape_rankings/test.js
+	node lambdas/test.js scrape_rankings
 
 
 build-scrape-team-matches: lambdas/node_modules
 	$(call build_lambda,scrape_team_matches)
 
-deploy-scrape-team-matches: build-scrape-rankings
+deploy-scrape-team-matches: build-scrape-team-matches
 	cd lambdas/scrape_team_matches/dist; zip lambda.zip index.js
 	$(call deploy_lambda,lbk-scrape-team-matches,scrape_team_matches)
 
 test-scrape-team-matches: build-scrape-team-matches
-	node lambdas/scrape_team_matches/test.js
+	node lambdas/test.js scrape_team_matches
 
 
 run: client/node_modules

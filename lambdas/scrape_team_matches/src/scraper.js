@@ -13,6 +13,7 @@ export async function close() {
 
 export async function scrapeSeason() {
     const seasonName = `${year}/${year + 1}`;
+    console.log("Scraping season: " + seasonName);
 
     const season = {
         year,
