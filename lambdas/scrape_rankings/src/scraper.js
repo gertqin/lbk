@@ -1,8 +1,6 @@
-import { loadPage, closeBrowser } from "../../utils/scraper-base";
+import { loadPage, closeBrowser, currentSeasonYear } from "../../utils/scraper-base";
 
-// TODO dynamic season
-const season = "2022";
-const url = `https://badmintonplayer.dk/DBF/Ranglister/#287,${season},,0,,,1095,0,,,,15,,,,0,,,,,,`;
+const url = `https://badmintonplayer.dk/DBF/Ranglister/#287,${currentSeasonYear},,0,,,1095,0,,,,15,,,,0,,,,,,`;
 let page = null;
 
 export async function init() {
@@ -13,8 +11,7 @@ export async function close() {
 }
 
 export async function scrapeRankingInfo() {
-    await page.waitForSelector("table.RankingListGrid", { timeout: 1000 });
-    return await page.$eval("#PanelResults", (el) => {
+    return await page.locator("#PanelResults").evaluate((el) => {
         const info = {};
         for (const node of el.childNodes) {
             // text node
@@ -40,13 +37,13 @@ export async function scrapePlayers() {
     const players = {};
 
     for (const category of categories) {
-        await page.waitForSelector(".rankingstabs", { timeout: 1000 });
+        await page.waitForSelector(".rankingstabs");
+        const categoryLink = page.locator(".rankingstabs > .smallTab > a").filter({
+            hasText: category,
+        });
 
-        const categoryLinks = await page.$$(".rankingstabs > .smallTab > a");
-        for (const link of categoryLinks) {
-            if ((await link.innerText()) === category) {
-                await link.click();
-            }
+        if ((await categoryLink.count()) > 0) {
+            await categoryLink.click();
         }
 
         const categoryPlayers = await scrapeCategory();
@@ -70,18 +67,16 @@ async function scrapeCategory() {
 
     let pageIdx = 0;
     while (true) {
-        await page.waitForSelector("table.RankingListGrid", { timeout: 1000 });
         players.push(...(await scrapeRankingTable()));
 
-        const rankingPagesEl = await page.$("table.RankingListGrid tr:last-child > td[colspan]");
+        const rankingPages = page.locator("table.RankingListGrid tr:last-child > td[colspan] a");
+        const rankingPagesCount = await rankingPages.count();
 
-        if (!rankingPagesEl) {
+        if (rankingPagesCount === 0) {
             break;
         }
-        const linkPages = await rankingPagesEl.$$("a");
-
-        if (linkPages.length > pageIdx) {
-            await linkPages[pageIdx].click();
+        if (rankingPagesCount > pageIdx) {
+            await rankingPages.nth(pageIdx).click();
             pageIdx++;
         } else {
             break;
@@ -92,13 +87,13 @@ async function scrapeCategory() {
 }
 
 async function scrapeRankingTable() {
-    const rankingTable = await page.$("table.RankingListGrid");
-    const names = await rankingTable.$$eval("tr > td.name > a", (els) => els.map((el) => el.innerText));
-    const levels = await rankingTable.$$eval("tr > td.clas", (els) => els.map((el) => el.innerText));
-    const points = await rankingTable.$$eval("tr > td.points:not(:last-child)", (els) =>
-        els.map((el) => Number(el.innerText))
+    const rankingTable = page.locator("table.RankingListGrid");
+    await rankingTable.waitFor();
+    const names = await rankingTable.locator("tr td.name > a").allInnerTexts();
+    const levels = await rankingTable.locator("tr td.clas").allInnerTexts();
+    const points = (await rankingTable.locator("tr td.points:not(:last-child)").allInnerTexts()).map((text) =>
+        Number(text)
     );
-
     const players = names.map((name, i) => ({ name, level: levels[i], points: points[i] }));
     return players;
 }
