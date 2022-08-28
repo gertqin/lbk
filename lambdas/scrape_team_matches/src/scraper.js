@@ -1,9 +1,10 @@
 import { loadPage, closeBrowser, currentSeasonYear } from "../../utils/scraper-base";
 
-const url = `https://www.badmintonplayer.dk/DBF/HoldTurnering/Stilling/#6,${currentSeasonYear},,,,,,1095,`;
+let year = currentSeasonYear;
 let page = null;
 
 export async function init() {
+    const url = `https://www.badmintonplayer.dk/DBF/HoldTurnering/Stilling/#6,${year},,,,,,1095,`;
     page = await loadPage(url);
 }
 export async function close() {
@@ -11,17 +12,20 @@ export async function close() {
 }
 
 export async function scrapeSeason() {
-    const seasonName = `${currentSeasonYear}/${currentSeasonYear + 1}`;
+    const seasonName = `${year}/${year + 1}`;
 
     const season = {
-        year: currentSeasonYear,
+        year,
         name: seasonName,
         ageGroups: {},
     };
 
-    const clubList = page.locator(".clubgrouplist tr");
+    const clubList = page.locator(".clubgrouplist");
+    await clubList.waitFor();
 
-    const ageGroupsData = await clubList.evaluateAll((rows) => {
+    const clubListRows = clubList.locator("tr");
+
+    const ageGroupsData = await clubListRows.evaluateAll((rows) => {
         const ageGroups = [];
 
         rows.forEach((r, i) => {
@@ -35,7 +39,7 @@ export async function scrapeSeason() {
                 const teams = ageGroups[ageGroups.length - 1].teams;
                 if (!teams[teamName]) teams[teamName] = [];
                 teams[teamName].push({
-                    index: i + 1,
+                    index: i,
                     groupName: r.querySelector("td:last-child").innerText,
                 });
             }
@@ -55,7 +59,7 @@ export async function scrapeSeason() {
 
             const matches = [];
             for (const group of teamGroups) {
-                await page.click(`tr:nth-child(${group.index}) a`);
+                await clubListRows.nth(group.index).locator("a").click();
                 const groupMatches = await scrapeTeamGroup(teamName);
                 if (group.groupName.startsWith("DMU")) {
                     groupMatches.forEach((match) => (match.isDMU = true));
@@ -85,47 +89,35 @@ export async function scrapeSeason() {
 }
 
 async function scrapeTeamGroup(teamName) {
-    const groupStandings = page.locator(".groupstandings tr");
+    const groupStandings = page.locator(".groupstandings");
+    await groupStandings.waitFor();
 
-    const teamIndex = await groupStandings.evaluateAll(
-        (rows, { teamName }) =>
-            rows
-                .map((r, i) => ({ el: r, index: i + 1 }))
-                .filter((r) => {
-                    const rowInnerText = r.el.innerText;
-                    const teamTd = r.el.querySelector(".team");
-                    return (
-                        teamTd.innerText.indexOf(teamName) >= 0 && rowInnerText.toLowerCase().indexOf("trukket") === -1
-                    );
-                })
-                .map((r) => r.index)[0],
-        { teamName }
-    );
-    if (!teamIndex) return [];
+    const teamEl = groupStandings
+        .locator("tr")
+        .filter({ has: page.locator("td.score") })
+        .locator("td.team a")
+        .filter({ hasText: teamName });
 
-    await page.click(`tr:nth-child(${teamIndex}) td.team a`);
+    if ((await teamEl.count()) === 0) return [];
+
+    await teamEl.click();
     return await scrapeMatchList(teamName);
 }
 
 async function scrapeMatchList(teamName) {
     const matchListTable = page.locator(".matchlist");
+    await matchListTable.waitFor();
 
-    const rows = await matchListTable.locator("tr").evaluateAll((rows) =>
-        rows.map((r) => ({
-            isMatchRow: !r.classList.contains("headerrow"),
-        }))
-    );
+    const rows = matchListTable.locator("tr:not(.headerrow)");
+    const rowCount = await rows.count();
 
     const matches = [];
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        if (!row.isMatchRow) continue;
-
-        await matchListTable.click(`tr:nth-child(${i + 1}) .matchno a`);
+    for (let i = 0; i < rowCount; i++) {
+        await rows.nth(i).locator(".matchno a").click();
         matches.push(await scrapeTeamMatch(teamName));
 
         await page.goBack();
-        await page.waitForSelector(".matchlist");
+        await matchListTable.waitFor();
     }
 
     return matches;

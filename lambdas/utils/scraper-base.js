@@ -7,7 +7,7 @@ export async function loadPage(url) {
     await initBrowser();
 
     const context = await browser.newContext();
-    context.setDefaultTimeout(8000);
+    context.setDefaultTimeout(5000);
     page = await context.newPage();
 
     await page.goto("about:blank");

@@ -11,6 +11,8 @@ export async function handler() {
     const now = new Date();
     const season = await scrapeSeason();
 
+    console.log(`Scraping took: ${(new Date() - now) / 1000}s`);
+
     await close();
 
     const body = JSON.stringify({
